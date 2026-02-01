@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from groq import Groq
-from e2b_code_interpreter import CodeInterpreter
+from e2b_code_interpreter import Sandbox
 import os
 
 # --- 1. PREMIUM CYBERPUNK UI ---
@@ -78,6 +78,7 @@ if not file:
     with cols[2]: st.markdown("#### 🎨 Step 3: Visualize\nAI builds interactive neon charts.")
 else:
     try:
+        # Load Data
         df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
         with st.expander("🔍 View Raw Data Preview"):
             st.dataframe(df.head(5), width='stretch')
@@ -93,7 +94,7 @@ else:
                 else:
                     with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
                         try:
-                            # Set API Keys globally
+                            # Set API Keys globally for the environment
                             os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
                             client = Groq(api_key=st.secrets["GROQ_API_KEY"])
                             
@@ -108,12 +109,12 @@ else:
                             )
                             code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
                             
-                            # THE KEY FIX: Using CodeInterpreter.create() handles the notebook attribute automatically
-                            with CodeInterpreter.create() as sandbox:
-                                # Use the correct filesystem write method
+                            # THE KEY FIX: Use Sandbox.create() to bypass the positional argument bug
+                            with Sandbox.create() as sandbox:
+                                # Use the correct filesystem API for version 2.x
                                 sandbox.files.write("data.csv", file.getvalue())
                                 
-                                # Execute using the notebook attribute correctly
+                                # Execute using the notebook capability
                                 result = sandbox.notebook.exec_cell(code)
                                 
                                 if result.results:
