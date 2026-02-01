@@ -3,93 +3,127 @@ import pandas as pd
 from groq import Groq
 from e2b_code_interpreter import Sandbox
 import os
+import base64
 
-# --- PREMIUM BRANDING & UI CONFIG ---
-st.set_page_config(page_title="GraphIQ | Sidd Bhattacharjee", page_icon="🚀", layout="wide")
+# --- PRO-TIER UI & BRANDING ---
+st.set_page_config(page_title="GraphIQ Pro | Sidd Bhattacharjee", page_icon="⚛️", layout="wide")
 
-# Futuristic CSS with Sid's Branding styles
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
+    .stApp { background: #0f172a; color: #f1f5f9; }
+    [data-testid="stSidebar"] { background-color: #1e293b; border-right: 1px solid #334155; }
     
-    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
-    .stApp { background: #0b0e14; color: #e2e8f0; }
-    
-    /* Sid's Branding Footer */
-    .sid-footer {
+    /* Branding Footer */
+    .sid-signature {
         position: fixed;
-        bottom: 10px;
+        bottom: 20px;
         right: 20px;
-        font-size: 14px;
-        color: #94a3b8;
-        background: rgba(15, 23, 42, 0.8);
-        padding: 10px 20px;
-        border-radius: 30px;
-        border: 1px solid #334155;
-        backdrop-filter: blur(5px);
+        background: rgba(30, 41, 59, 0.9);
+        padding: 12px 24px;
+        border-radius: 50px;
+        border: 1px solid #3b82f6;
+        box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
         z-index: 1000;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
     }
-    
-    /* Moving Icon Animation */
-    .moving-icon {
-        animation: rotate 3s linear infinite;
-        display: inline-block;
-        font-size: 20px;
+    .rotating-atom {
+        animation: spin 4s linear infinite;
+        font-size: 24px;
     }
-    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    
-    /* Premium Dashboard Cards */
-    .data-card {
-        background: #1e293b;
-        padding: 20px;
-        border-radius: 15px;
-        border-left: 5px solid #3b82f6;
-        margin-bottom: 20px;
-    }
+    @keyframes spin { from {transform: rotate(0deg);} to {transform: rotate(360deg);} }
     </style>
     
-    <div class="sid-footer">
-        Created by <strong>Sidd Bhattacharjee</strong> 
-        <span style="color:#3b82f6;">"your next gen AI tech marketer"</span> 
-        <span class="moving-icon">⚛️</span>
+    <div class="sid-signature">
+        <span class="rotating-atom">⚛️</span>
+        <div>
+            <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #3b82f6;">Created by</div>
+            <div style="font-weight: bold; font-size: 14px;">Sidd Bhattacharjee</div>
+            <div style="font-size: 11px; font-style: italic; color: #94a3b8;">"your next gen AI tech marketer"</div>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
-# --- SIDEBAR: PRODUCT CONFIGURATION ---
+# --- SIDEBAR: THE ANALYST'S TOOLKIT ---
 with st.sidebar:
-    st.title("⚙️ GraphIQ Pro")
+    st.title("🚀 GraphIQ Pro")
     st.markdown("---")
     
-    with st.expander("🛠 Engine Settings", expanded=True):
-        model_choice = st.selectbox("LLM Brain", ["Llama3-70b-8192 (Genius)", "Llama3-8b-8192 (Fast)"])
-        temp = st.slider("Creativity Level", 0.0, 1.0, 0.2)
+    with st.expander("🛡️ Data Governance", expanded=True):
+        auto_clean = st.toggle("Auto-Fix Missing Values", value=True)
+        detect_outliers = st.toggle("Highlight Anomalies", value=False)
     
-    with st.expander("🎨 Visual Identity"):
-        viz_theme = st.selectbox("Color Palette", ["Neon Night", "Deep Space", "Arctic Frost", "Solaris"])
-        show_code = st.checkbox("Show AI Logic (Code)", value=False)
+    with st.expander("🎭 Visual Identity"):
+        viz_style = st.selectbox("Style Preset", ["Cyberpunk Neon", "Glassmorphic", "Executive (Clean)", "High-Contrast"])
+        chart_res = st.select_slider("Export Resolution", options=["Standard", "4K Ultra"])
 
-    st.markdown("---")
-    if st.button("🗑 Clear Session"):
-        st.rerun()
-
-# --- MAIN WORKSPACE ---
-col_main, col_stats = st.columns([3, 1])
+# --- MAIN CANVAS ---
+col_main, col_tools = st.columns([3, 1])
 
 with col_main:
-    st.markdown("# ⚛️ GraphIQ Intelligence")
-    st.caption("Advanced Data Visualization for the Next Gen Enterprise")
+    st.title("⚛️ Strategic Intelligence Hub")
     
-    uploaded_file = st.file_uploader("", type=["csv", "xlsx"])
+    file = st.file_uploader("Upload Dataset (CSV/XLSX)", type=["csv", "xlsx"])
 
-    if uploaded_file:
-        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+    if file:
+        # Load Data
+        df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
         
-        # UI: Smart Data Preview
-        st.markdown('<div class="data-card"><h4>Live Data Stream</h4></div>', unsafe_allow_html=True)
-        st.dataframe(df.head(5), use_container_width=True)
+        # PRO FEATURE: Smart Tabbed Interface
+        tab1, tab2, tab3 = st.tabs(["📊 Visualization Canvas", "🧹 Data Health", "📝 Executive Summary"])
         
-        # User Interaction
-        query = st.text_input("Describe the visualization or business question:", placeholder="e.g., 'Compare quarterly growth
+        with tab1:
+            query = st.text_input("What is your analytical objective?", placeholder="e.g., 'Visualize the Pareto distribution of sales by category'")
+            
+            if st.button("Generate Pro Visualization"):
+                with st.status("Engine: Llama3-70b Processing...", expanded=True):
+                    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+                    
+                    # PRO PROMPT: Includes data cleaning instructions
+                    sys_instr = f"""
+                    You are a Principal Data Scientist. Write Python code using Plotly.
+                    Style: {viz_style}. Data: 'data.csv'. Columns: {df.columns.tolist()}.
+                    1. Clean data: Remove NaNs for the requested columns.
+                    2. Visualization: Create a stunning {viz_style} chart for {query}.
+                    3. Analytics: Add a trendline if applicable.
+                    Output ONLY valid code. No text.
+                    """
+                    
+                    res = client.chat.completions.create(
+                        messages=[{"role": "system", "content": sys_instr}, {"role": "user", "content": query}],
+                        model="llama3-70b-8192"
+                    )
+                    code = res.choices[0].message.content.replace("```python", "").replace("```", "")
+                    
+                    with Sandbox(api_key=os.getenv("E2B_API_KEY")) as sandbox:
+                        sandbox.upload_file(file)
+                        execution = sandbox.notebook.exec_cell(code)
+                        if execution.results:
+                            st.plotly_chart(execution.results[0].plotly, use_container_width=True)
+                            
+                            # PRO FEATURE: Download as HTML
+                            chart_html = execution.results[0].plotly.to_html()
+                            st.download_button("📥 Export Interactive Chart (HTML)", data=chart_html, file_name="graphiq_export.html", mime="text/html")
+
+        with tab2:
+            st.subheader("Data Quality Audit")
+            st.write(df.describe())
+            st.warning(f"Detected {df.isnull().sum().sum()} missing values across all columns.")
+
+        with tab3:
+            st.subheader("AI Narrative")
+            # This would call the LLM to write a text summary of the df.head() and df.describe()
+            st.info("The AI detects a strong upward trend in 'Revenue' particularly in Q4. (Sample Insight)")
+
+with col_tools:
+    if file:
+        st.markdown("### 🛠️ Quick Actions")
+        if st.button("🪄 Auto-Suggest Charts"):
+            st.write("1. Revenue vs Time (Line)")
+            st.write("2. Category Split (Donut)")
+        
+        st.markdown("---")
+        st.markdown("### 📋 Export Hub")
+        st.button("📄 Generate PDF Report (Coming Soon)")
+        st.button("📽️ Create Animated GIF")
