@@ -1,17 +1,18 @@
 import streamlit as st
 import pandas as pd
 from groq import Groq
-from e2b_code_interpreter import CodeInterpreter
+from e2b_code_interpreter import Sandbox
 import os
 
-# --- 1. CYBERPUNK UI & LINKEDIN BRANDING ---
+# --- 1. PREMIUM UI & BRANDING ---
 st.set_page_config(page_title="GraphIQ | Sidd Bhattacharjee", page_icon="⚛️", layout="wide")
 
 st.markdown("""
     <style>
+    /* Main App Background */
     .stApp { background: #050505; color: #ffffff !important; }
     
-    /* Sidebar Visibility & Neon Green Contrast */
+    /* Sidebar Visibility & Contrast */
     [data-testid="stSidebar"] {
         background-color: #000000 !important;
         border-right: 1px solid #39FF14 !important;
@@ -75,18 +76,19 @@ st.markdown("""
             <div>
                 <div style="font-size: 9px; text-transform: uppercase; color: #39FF14; letter-spacing: 1.2px;">Created by</div>
                 <div style="font-weight: 700; font-size: 14px; color: white;">Sidd Bhattacharjee</div>
-                <div style="font-size: 10px; color: #94a3b8;">your next gen AI tech marketer</div>
+                <div style="font-size: 10px; color: #888888;">your next gen AI tech marketer</div>
             </div>
         </div>
     </a>
     """, unsafe_allow_html=True)
 
+# --- 2. ENGINE CONTROLS ---
 def reset_app():
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     st.rerun()
 
-# --- 2. MAIN WORKFLOW ---
+# --- 3. MAIN WORKFLOW ---
 file = st.file_uploader("📂 Upload Dataset (CSV/XLSX)", type=["csv", "xlsx"])
 
 if not file:
@@ -96,12 +98,11 @@ if not file:
     with cols[2]: st.markdown("#### 🎨 Step 3: Visualize\nAI builds interactive neon charts.")
 else:
     try:
-        # Data Processing
         df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
         with st.expander("🔍 View Raw Data Preview"):
             st.dataframe(df.head(5), width='stretch')
 
-        query = st.text_input("💬 What insight should GraphIQ reveal?", placeholder="e.g., Show a 3D scatter plot of Revenue vs Marketing Spend")
+        query = st.text_input("💬 What insight should GraphIQ reveal?", placeholder="e.g., Show a 3D scatter plot of Revenue")
 
         col_run, col_reset = st.columns([4, 1])
         
@@ -112,19 +113,13 @@ else:
                 else:
                     with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
                         try:
-                            # Setting key globally fixes the init() argument error
+                            # Setting key globally fixes the SandboxBase init error
                             os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
                             client = Groq(api_key=st.secrets["GROQ_API_KEY"])
                             
                             MODEL_ID = "llama-3.3-70b-versatile"
                             
-                            sys_prompt = f"""
-                            You are a Data Scientist. Write ONLY python code using plotly.express. 
-                            Data: 'data.csv'. Columns: {df.columns.tolist()}. 
-                            Goal: {query}.
-                            Force template='plotly_dark' and neon green (#39FF14) accents.
-                            The final line must be 'fig.show()'.
-                            """
+                            sys_prompt = f"Write ONLY python code using plotly.express. Data: 'data.csv'. Columns: {df.columns.tolist()}. Goal: {query}. Force template='plotly_dark' with color_discrete_sequence=['#39FF14', '#00F2FE']. Final line MUST be 'fig.show()'."
                             
                             response = client.chat.completions.create(
                                 messages=[{"role": "user", "content": sys_prompt}],
@@ -133,32 +128,29 @@ else:
                             )
                             code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
                             
-                            # THE FIX: CodeInterpreter handles background arguments automatically
-                            with CodeInterpreter() as sandbox:
+                            # Using the base Sandbox class correctly for version 2.x
+                            with Sandbox() as sandbox:
                                 sandbox.upload_file(file)
                                 result = sandbox.notebook.exec_cell(code)
-                                
                                 if result.results:
                                     st.plotly_chart(result.results[0].plotly, width='stretch')
                                     st.success("Vision synthesized successfully!")
                                 else:
-                                    st.error("Engine failure: Logic executed but no chart produced.")
+                                    st.error("Engine failure: Logic executed but no chart was produced.")
                         except Exception as e:
                             st.error(f"⚠️ Neural Link Error: {str(e)}")
         
         with col_reset:
             if st.button("🗑 Reset", width='stretch'):
                 reset_app()
-
     except Exception as e:
         st.error(f"File loading error: {e}")
 
-# Sidebar Persistence
+# Sidebar Visibility
 with st.sidebar:
     st.markdown("### 🧬 Memory Bank")
     if st.button("Connect Neural Link"):
         st.info("Cloud sync coming soon.")
     st.markdown("---")
-    st.markdown("### 🛠 Tools")
     if st.button("🗑 Reset Engine"):
         reset_app()
