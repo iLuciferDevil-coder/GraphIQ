@@ -1,6 +1,5 @@
 streamlit
 groq
-e2b>=1.0.0
-e2b-code-interpreter>=1.0.0
+e2b-code-interpreter==0.0.34
 pandas
 plotly
