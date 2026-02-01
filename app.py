@@ -90,54 +90,53 @@ else:
 
     query = st.text_input("💬 What insight should GraphIQ reveal?", placeholder="e.g., Show a correlation heatmap of all numerical columns")
 
-    if st.button("🚀 Synthesize Visualization"):
+   if st.button("🚀 Synthesize Visualization"):
         if not query:
             st.warning("Please enter a question first.")
         else:
             with st.status("GraphIQ Agent is thinking...", expanded=True):
-                client = Groq(api_key=GROQ_API_KEY)
-                
-                # System Prompt for High-End Visualization
-                sys_msg = f"""
-                You are a Senior Data Scientist. Write Python code using Plotly to visualize: {query}.
-                Data is in 'data.csv'. Columns: {df.columns.tolist()}.
-                - Use a dark theme compatible with a background of #0b0e14.
-                - Use vibrant, futuristic colors (blues, purples, cyans).
-                - Ensure the chart is interactive and takes full width.
-                - Output ONLY valid Python code. No text explanations.
-                """
-                
-                response = client.chat.completions.create(
-                    messages=[{"role": "system", "content": sys_msg}, {"role": "user", "content": query}],
-                    model="llama3-70b-8192"
-                )
-                code = response.choices[0].message.content.replace("```python", "").replace("```", "")
-                
-                with Sandbox(api_key=E2B_API_KEY) as sandbox:
-                    sandbox.upload_file(file)
-                    result = sandbox.notebook.exec_cell(code)
+                try:
+                    client = Groq(api_key=GROQ_API_KEY)
                     
-                    if result.results:
-                        st.plotly_chart(result.results[0].plotly, use_container_width=True)
+                    # Updated Model String and escaped braces for safety
+                    model_to_use = "llama3-70b-8192" 
+                    
+                    sys_msg = f"""
+                    You are a Senior Data Scientist. Write Python code using Plotly to visualize: {query}.
+                    Data is in 'data.csv'. Columns: {df.columns.tolist()}.
+                    - Use a dark theme (plotly_dark).
+                    - Use vibrant colors like #00f2fe and #4facfe.
+                    - Output ONLY the python code starting with 'import plotly'. 
+                    - Do not include any markdown backticks or explanations.
+                    """
+                    
+                    response = client.chat.completions.create(
+                        messages=[
+                            {"role": "system", "content": sys_msg},
+                            {"role": "user", "content": query}
+                        ],
+                        model=model_to_use,
+                        temperature=0.2 # Lower temperature for more stable code generation
+                    )
+                    
+                    # Clean the response to ensure only pure code remains
+                    raw_code = response.choices[0].message.content
+                    code = raw_code.replace("```python", "").replace("```", "").strip()
+                    
+                    with Sandbox(api_key=E2B_API_KEY) as sandbox:
+                        sandbox.upload_file(file)
+                        result = sandbox.notebook.exec_cell(code)
                         
-                        st.markdown("---")
-                        # --- THE SMART CONVERSION SECTION ---
-                        st.subheader("📥 Export & Save")
-                        c1, c2 = st.columns(2)
-                        
-                        with c1:
+                        if result.results:
+                            st.plotly_chart(result.results[0].plotly, use_container_width=True)
+                            
+                            # Export Section
+                            st.markdown("---")
                             html_bytes = result.results[0].plotly.to_html().encode()
                             st.download_button("💾 Download Interactive Chart", data=html_bytes, file_name="graphiq_viz.html", mime="text/html")
-                        
-                        with c2:
-                            if not st.session_state.authenticated:
-                                if st.button("✨ Save to My Account"):
-                                    st.info("To save this vision to your history, please enter your email below.")
-                                    email = st.text_input("Email Address")
-                                    if st.button("Confirm & Save"):
-                                        st.session_state.authenticated = True
-                                        st.success(f"Work saved to {email}!")
-                            else:
-                                st.success("Vision automatically synced to your cloud account.")
-                    else:
-                        st.error("Engine failure: The AI could not generate a chart for this data. Try a simpler prompt.")
+                        else:
+                            st.error("The agent generated code, but it didn't produce a chart. Try rephrasing your request.")
+                            
+                except Exception as e:
+                    st.error(f"Neural Link Error: {str(e)}")
+                    st.info("Tip: Ensure your GROQ_API_KEY is correct in Streamlit Secrets.")
