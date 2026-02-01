@@ -1,3 +1,6 @@
 streamlit
 groq
-e2b_code_interpreter
+e2b>=1.0.0
+e2b-code-interpreter>=1.0.0
+pandas
+plotly
