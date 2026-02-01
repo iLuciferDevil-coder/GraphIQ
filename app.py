@@ -4,106 +4,59 @@ from groq import Groq
 from e2b_code_interpreter import CodeInterpreter
 import os
 
-# --- 1. PREMIUM UI & BRANDING ---
+# --- 1. BRANDING & UI ---
 st.set_page_config(page_title="GraphIQ | Sidd Bhattacharjee", page_icon="⚛️", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background: #050505; color: #ffffff !important; }
-    [data-testid="stSidebar"] {
-        background-color: #000000 !important;
-        border-right: 1px solid #39FF14 !important;
-    }
+    [data-testid="stSidebar"] { background-color: #000000; border-right: 1px solid #39FF14; }
     [data-testid="stSidebar"] * { color: #39FF14 !important; }
-    label, .stMarkdown, .stSubheader, p, span, .stMetric { 
-        color: #ffffff !important; 
-        font-weight: 500 !important; 
-    }
-    button[kind="secondary"] {
-        color: #39FF14 !important;
-        border-color: #39FF14 !important;
-        background-color: rgba(57, 255, 20, 0.05) !important;
-    }
-    .stFileUploader section {
-        background-color: #111111 !important;
-        border: 1px dashed #39FF14 !important;
-        color: #ffffff !important;
-    }
-    .hero-box {
-        padding: 50px 20px;
-        text-align: center;
-        background: radial-gradient(circle at center, rgba(57, 255, 20, 0.1) 0%, rgba(5, 5, 5, 0) 75%);
-        margin-bottom: 20px;
-    }
-    .sid-link { 
-        position: fixed; bottom: 25px; right: 25px; 
-        text-decoration: none !important; z-index: 1000; 
-        transition: transform 0.3s ease; 
-    }
-    .sid-pill {
-        background: rgba(0, 0, 0, 0.95); padding: 12px 24px;
-        border-radius: 50px; border: 1px solid #39FF14;
-        box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
-        display: flex; align-items: center; gap: 12px;
-    }
-    .rotating-atom { animation: spin 4s linear infinite; font-size: 24px; color: #39FF14; }
-    @keyframes spin { from {transform: rotate(0deg);} to {transform: rotate(360deg);} }
+    .hero-box { padding: 50px 20px; text-align: center; margin-bottom: 20px; }
     </style>
-
     <div class="hero-box">
-        <h1 style="font-size: 4rem; font-weight: 800; color: #39FF14; margin-bottom:0; text-shadow: 0 0 15px rgba(57, 255, 20, 0.6);">GraphIQ</h1>
+        <h1 style="font-size: 4rem; color: #39FF14; margin-bottom:0;">GraphIQ</h1>
         <p style="font-size: 1.4rem; color: #888888;">Next-Gen Data Storytelling Agent</p>
     </div>
-
-    <a href="https://www.linkedin.com/in/jedisuperman" target="_blank" class="sid-link">
-        <div class="sid-pill">
-            <span class="rotating-atom">⚛️</span>
-            <div>
-                <div style="font-size: 9px; text-transform: uppercase; color: #39FF14; letter-spacing: 1.2px;">Created by</div>
-                <div style="font-weight: 700; font-size: 14px; color: white;">Sidd Bhattacharjee</div>
-                <div style="font-size: 10px; color: #94a3b8;">your next gen AI tech marketer</div>
-            </div>
-        </div>
-    </a>
     """, unsafe_allow_html=True)
 
-# --- 2. MAIN WORKFLOW ---
-file = st.file_uploader("📂 Upload Dataset (CSV/XLSX)", type=["csv", "xlsx"])
+# --- 2. EXECUTION ---
+file = st.file_uploader("📂 Upload Dataset", type=["csv", "xlsx"])
 
 if file:
-    try:
-        df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
-        st.dataframe(df.head(5), width='stretch')
-        query = st.text_input("💬 What insight should GraphIQ reveal?")
+    df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
+    query = st.text_input("💬 What insight should GraphIQ reveal?")
 
-        if st.button("🚀 Synthesize Visualization", width='stretch'):
-            with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
-                try:
-                    # Set API Keys
-                    os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
-                    client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+    if st.button("🚀 Synthesize Visualization", width='stretch'):
+        with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
+            try:
+                # Setup Keys
+                os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
+                client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+                
+                # LLM Generation
+                sys_prompt = f"Write ONLY python code using plotly.express. Data: 'data.csv'. Columns: {df.columns.tolist()}. User wants: {query}. Force template='plotly_dark'. Final line: 'fig.show()'."
+                response = client.chat.completions.create(
+                    messages=[{"role": "user", "content": sys_prompt}],
+                    model="llama-3.3-70b-versatile",
+                    temperature=0.1
+                )
+                code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
+
+                # THE CRITICAL COMBINED FIX:
+                # 1. Use CodeInterpreter (to have the .notebook attribute)
+                # 2. Use .create() (to avoid the SandboxBase.init positional argument bug)
+                with CodeInterpreter.create() as sandbox:
+                    # Use the updated filesystem API for version 2.x
+                    sandbox.files.write("data.csv", file.getvalue())
                     
-                    # Ask Llama 3.3 for code
-                    sys_prompt = f"Write ONLY python code using plotly.express. Data: 'data.csv'. Columns: {df.columns.tolist()}. User wants: {query}. Force template='plotly_dark'. Final line: 'fig.show()'."
-                    response = client.chat.completions.create(
-                        messages=[{"role": "user", "content": sys_prompt}],
-                        model="llama-3.3-70b-versatile",
-                        temperature=0.1
-                    )
-                    code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
+                    # Execute in a notebook cell
+                    result = sandbox.notebook.exec_cell(code)
                     
-                    # ✅ THE FINAL FIX: Using CodeInterpreter.create() handles the notebook attribute correctly
-                    with CodeInterpreter.create() as sandbox:
-                        # Use updated filesystem API
-                        sandbox.files.write("data.csv", file.getvalue())
-                        
-                        # Execute in notebook cell
-                        result = sandbox.notebook.exec_cell(code)
-                        
-                        if result.results:
-                            st.plotly_chart(result.results[0].plotly, width='stretch')
-                            st.success("Vision synthesized successfully!")
-                except Exception as e:
-                    st.error(f"⚠️ Neural Link Error: {str(e)}")
-    except Exception as e:
-        st.error(f"File loading error: {e}")
+                    if result.results:
+                        st.plotly_chart(result.results[0].plotly, width='stretch')
+                        st.success("Vision synthesized!")
+                    else:
+                        st.error("Engine failure: No chart produced.")
+            except Exception as e:
+                st.error(f"⚠️ Neural Link Error: {str(e)}")
