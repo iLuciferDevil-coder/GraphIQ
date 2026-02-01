@@ -4,7 +4,7 @@ from groq import Groq
 from e2b_code_interpreter import Sandbox
 import os
 
-# --- 1. CYBERPUNK UI & HIGH-CONTRAST TEXT ---
+# --- 1. CYBERPUNK UI & BRANDING ---
 st.set_page_config(page_title="GraphIQ | Sidd Bhattacharjee", page_icon="⚛️", layout="wide")
 
 st.markdown("""
@@ -12,16 +12,16 @@ st.markdown("""
     /* Main App Background */
     .stApp { background: #050505; color: #ffffff !important; }
     
-    /* FIX: Sidebar Contrast & Visibility */
+    /* Sidebar Visibility & Contrast */
     [data-testid="stSidebar"] {
         background-color: #000000 !important;
         border-right: 1px solid #39FF14 !important;
     }
     [data-testid="stSidebar"] * {
-        color: #39FF14 !important; /* Neon Green for Sidebar text */
+        color: #39FF14 !important;
     }
     
-    /* Force high-contrast labels */
+    /* Global High-Contrast Text */
     label, .stMarkdown, .stSubheader, p, span, .stMetric { 
         color: #ffffff !important; 
         font-weight: 500 !important; 
@@ -40,7 +40,7 @@ st.markdown("""
         color: #ffffff !important;
     }
 
-    /* Hero Section */
+    /* Hero Branding Section */
     .hero-box {
         padding: 50px 20px;
         text-align: center;
@@ -48,8 +48,12 @@ st.markdown("""
         margin-bottom: 20px;
     }
 
-    /* Clickable LinkedIn Signature */
-    .sid-link { position: fixed; bottom: 25px; right: 25px; text-decoration: none !important; z-index: 1000; transition: transform 0.3s ease; }
+    /* Clickable Sid Signature Pill */
+    .sid-link { 
+        position: fixed; bottom: 25px; right: 25px; 
+        text-decoration: none !important; z-index: 1000; 
+        transition: transform 0.3s ease; 
+    }
     .sid-link:hover { transform: scale(1.05); }
     .sid-pill {
         background: rgba(0, 0, 0, 0.95); padding: 12px 24px;
@@ -71,7 +75,7 @@ st.markdown("""
             <span class="rotating-atom">⚛️</span>
             <div>
                 <div style="font-size: 9px; text-transform: uppercase; color: #39FF14; letter-spacing: 1.2px;">Created by</div>
-                <div style="font-weight: 700; font-size: 15px; color: white;">Sidd Bhattacharjee</div>
+                <div style="font-weight: 700; font-size: 14px; color: white;">Sidd Bhattacharjee</div>
                 <div style="font-size: 11px; color: #94a3b8;">your next gen AI tech marketer</div>
             </div>
         </div>
@@ -94,48 +98,59 @@ if not file:
     with cols[2]: st.markdown("#### 🎨 Step 3: Visualize\nAI builds interactive neon charts.")
 else:
     try:
+        # Handle Data Reading
         df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
         with st.expander("🔍 View Raw Data Preview"):
             st.dataframe(df.head(5), use_container_width=True)
 
-        query = st.text_input("💬 What insight should GraphIQ reveal?", placeholder="e.g., Show me a 3D scatter plot of marketing ROI")
+        query = st.text_input("💬 What insight should GraphIQ reveal?", placeholder="e.g., Show a 3D scatter plot of Revenue vs Marketing Spend")
 
         col_run, col_reset = st.columns([4, 1])
         
         with col_run:
             if st.button("🚀 Synthesize Visualization", use_container_width=True):
-                with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
-                    try:
-                        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-                        
-                        # UPDATED MODEL ID FOR 2026 STANDARDS
-                        RECOMMENDED_MODEL = "llama-3.3-70b-versatile"
-                        
-                        sys_prompt = f"""
-                        Write ONLY python code using plotly.express. Data: 'data.csv'. 
-                        Columns: {df.columns.tolist()}. User wants: {query}.
-                        Force dark theme: template='plotly_dark'.
-                        Use a high-contrast Neon Green (#39FF14) and Electric Blue palette.
-                        Final line must be 'fig.show()'.
-                        """
-                        
-                        response = client.chat.completions.create(
-                            messages=[{"role": "user", "content": sys_prompt}],
-                            model=RECOMMENDED_MODEL,
-                            temperature=0.1
-                        )
-                        code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
-                        
-                        with Sandbox(api_key=os.getenv("E2B_API_KEY")) as sandbox:
-                            sandbox.upload_file(file)
-                            result = sandbox.notebook.exec_cell(code)
-                            if result.results:
-                                st.plotly_chart(result.results[0].plotly, use_container_width=True)
-                                st.success("Vision synthesized successfully!")
-                            else:
-                                st.error("Engine failure: Logic executed but no chart was produced.")
-                    except Exception as e:
-                        st.error(f"⚠️ Neural Link Error: {str(e)}")
+                if not query:
+                    st.warning("Please enter a question first.")
+                else:
+                    with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
+                        try:
+                            # Set E2B API Key globally for version 2.x standards
+                            os.environ["E2B_API_KEY"] = os.getenv("E2B_API_KEY")
+                            
+                            client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+                            
+                            # Updated model per Groq 2026 deprecation schedule
+                            MODEL_ID = "llama-3.3-70b-versatile"
+                            
+                            sys_prompt = f"""
+                            Write ONLY python code using plotly.express. Data is in 'data.csv'. 
+                            Columns: {df.columns.tolist()}. User wants: {query}.
+                            Force dark theme: template='plotly_dark'.
+                            Use a high-contrast Neon Green (#39FF14) and Electric Blue palette.
+                            The final line MUST be 'fig.show()'.
+                            """
+                            
+                            response = client.chat.completions.create(
+                                messages=[{"role": "user", "content": sys_prompt}],
+                                model=MODEL_ID,
+                                temperature=0.1
+                            )
+                            
+                            raw_code = response.choices[0].message.content
+                            code = raw_code.replace("```python", "").replace("```", "").strip()
+                            
+                            # Initialize Sandbox without direct api_key argument (new SDK standard)
+                            with Sandbox() as sandbox:
+                                sandbox.upload_file(file)
+                                result = sandbox.notebook.exec_cell(code)
+                                
+                                if result.results:
+                                    st.plotly_chart(result.results[0].plotly, use_container_width=True)
+                                    st.success("Vision synthesized successfully!")
+                                else:
+                                    st.error("Engine failure: Code executed but no chart was produced. Try rephrasing.")
+                        except Exception as e:
+                            st.error(f"⚠️ Neural Link Error: {str(e)}")
         
         with col_reset:
             if st.button("🗑 Reset", use_container_width=True):
@@ -144,12 +159,12 @@ else:
     except Exception as e:
         st.error(f"File loading error: {e}")
 
-# Sidebar Visibility Fix
+# Sidebar Visibility Check
 with st.sidebar:
     st.markdown("### 🧬 Memory Bank")
-    st.write("Persist your visions across sessions.")
+    st.write("Session persistence active.")
     if st.button("Connect Neural Link"):
-        st.info("Cloud authentication coming soon.")
+        st.info("Direct cloud sync coming soon.")
     st.markdown("---")
     st.markdown("### 🛠 Tools")
     if st.button("🗑 Reset Engine"):
