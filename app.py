@@ -75,8 +75,8 @@ st.markdown("""
             <span class="rotating-atom">⚛️</span>
             <div>
                 <div style="font-size: 9px; text-transform: uppercase; color: #39FF14; letter-spacing: 1.2px;">Created by</div>
-                <div style="font-weight: 700; font-size: 15px; color: white;">Sidd Bhattacharjee</div>
-                <div style="font-size: 10px; color: #888888;">your next gen AI tech marketer</div>
+                <div style="font-weight: 700; font-size: 14px; color: white;">Sidd Bhattacharjee</div>
+                <div style="font-size: 11px; color: #888888;">your next gen AI tech marketer</div>
             </div>
         </div>
     </a>
@@ -114,7 +114,7 @@ else:
                 else:
                     with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
                         try:
-                            # SET KEYS GLOBALLY - This fixes the SandboxBase argument error
+                            # SET KEYS GLOBALLY - This fixes the SandboxBase missing arguments error
                             os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
                             client = Groq(api_key=st.secrets["GROQ_API_KEY"])
                             
@@ -157,6 +157,5 @@ with st.sidebar:
     if st.button("Connect Neural Link"):
         st.info("Cloud sync coming soon.")
     st.markdown("---")
-    st.markdown("### 🛠 Tools")
     if st.button("🗑 Reset Engine"):
         reset_app()
