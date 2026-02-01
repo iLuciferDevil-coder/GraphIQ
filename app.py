@@ -117,7 +117,7 @@ else:
                 else:
                     with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
                         try:
-                            # SET KEYS GLOBALLY - This fixes the SandboxBase missing arguments error
+                            # SET KEYS GLOBALLY
                             os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
                             client = Groq(api_key=st.secrets["GROQ_API_KEY"])
                             
