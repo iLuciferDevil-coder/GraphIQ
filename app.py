@@ -132,4 +132,41 @@ else:
                             )
                             
                             raw_code = response.choices[0].message.content
-                            code = raw_code.replace("
+                            code = raw_code.replace("", "").strip()
+                            
+                            # Initialize Sandbox with required arguments
+                            sandbox = Sandbox(
+                                sandbox_id=os.getenv("E2B_SANDBOX_ID"),
+                                envd_version=os.getenv("E2B_ENVD_VERSION"),
+                                envd_access_token=os.getenv("E2B_ENVD_ACCESS_TOKEN"),
+                                sandbox_domain=os.getenv("E2B_SANDBOX_DOMAIN"),
+                                connection_config={"api_key": os.getenv("E2B_API_KEY")}
+                            )
+                            
+                            with sandbox:
+                                sandbox.upload_file(file)
+                                result = sandbox.notebook.exec_cell(code)
+                                
+                                if result.results:
+                                    st.plotly_chart(result.results[0].plotly, width='stretch')
+                                    st.success("Vision synthesized successfully!")
+                                else:
+                                    st.error("Engine failure: Logic executed but no chart was produced.")
+                        except Exception as e:
+                            st.error(f"⚠️ Neural Link Error: {str(e)}")
+        
+        with col_reset:
+            if st.button("🗑 Reset", width='stretch'):
+                reset_app()
+
+    except Exception as e:
+        st.error(f"File loading error: {e}")
+
+# Sidebar Visibility
+with st.sidebar:
+    st.markdown("### 🧬 Memory Bank")
+    if st.button("Connect Neural Link"):
+        st.info("Cloud sync coming soon.")
+    st.markdown("---")
+    if st.button("🗑 Reset Engine"):
+        reset_app()
