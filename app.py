@@ -56,7 +56,7 @@ st.markdown("""
             <span class="rotating-atom">⚛️</span>
             <div>
                 <div style="font-size: 9px; text-transform: uppercase; color: #39FF14; letter-spacing: 1.2px;">Created by</div>
-                <div style="font-weight: 700; font-size: 15px; color: white;">Sidd Bhattacharjee</div>
+                <div style="font-weight: 700; font-size: 14px; color: white;">Sidd Bhattacharjee</div>
                 <div style="font-size: 10px; color: #94a3b8;">your next gen AI tech marketer</div>
             </div>
         </div>
@@ -93,12 +93,13 @@ else:
                 else:
                     with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
                         try:
-                            # 1. Setup Environment
+                            # ✅ SET API KEYS GLOBALLY BEFORE INITIALIZATION
                             os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
                             client = Groq(api_key=st.secrets["GROQ_API_KEY"])
                             
-                            # 2. Generate Code
+                            # Use current production model ID 
                             MODEL_ID = "llama-3.3-70b-versatile"
+                            
                             sys_prompt = f"Write ONLY python code using plotly.express. Data is in 'data.csv'. Columns: {df.columns.tolist()}. User wants: {query}. Force template='plotly_dark' with color_discrete_sequence=['#39FF14', '#00F2FE']. Final line must be 'fig.show()'."
                             
                             response = client.chat.completions.create(
@@ -108,7 +109,7 @@ else:
                             )
                             code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
                             
-                            # 3. Execute in Sandbox
+                            # ✅ INITIALIZE SANDBOX WITHOUT ARGUMENTS
                             with Sandbox() as sandbox:
                                 sandbox.upload_file(file)
                                 result = sandbox.notebook.exec_cell(code)
