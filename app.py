@@ -21,13 +21,13 @@ st.markdown("""
         color: #39FF14 !important; /* Neon Green for Sidebar text */
     }
     
-    /* Global Text Overrides */
+    /* Force high-contrast labels */
     label, .stMarkdown, .stSubheader, p, span, .stMetric { 
         color: #ffffff !important; 
         font-weight: 500 !important; 
     }
 
-    /* Futuristic Buttons */
+    /* Futuristic Neon Green Buttons */
     button[kind="secondary"] {
         color: #39FF14 !important;
         border-color: #39FF14 !important;
@@ -48,12 +48,13 @@ st.markdown("""
         margin-bottom: 20px;
     }
 
-    /* Clickable Sid Signature */
-    .sid-link { position: fixed; bottom: 25px; right: 25px; text-decoration: none !important; z-index: 1000; }
+    /* Clickable LinkedIn Signature */
+    .sid-link { position: fixed; bottom: 25px; right: 25px; text-decoration: none !important; z-index: 1000; transition: transform 0.3s ease; }
+    .sid-link:hover { transform: scale(1.05); }
     .sid-pill {
-        background: rgba(0, 0, 0, 0.9); padding: 12px 24px;
+        background: rgba(0, 0, 0, 0.95); padding: 12px 24px;
         border-radius: 50px; border: 1px solid #39FF14;
-        box-shadow: 0 0 15px rgba(57, 255, 20, 0.4);
+        box-shadow: 0 0 20px rgba(57, 255, 20, 0.4);
         display: flex; align-items: center; gap: 12px;
     }
     .rotating-atom { animation: spin 4s linear infinite; font-size: 24px; color: #39FF14; }
@@ -61,8 +62,8 @@ st.markdown("""
     </style>
 
     <div class="hero-box">
-        <h1 style="font-size: 3.5rem; font-weight: 800; color: #39FF14; margin-bottom:0; text-shadow: 0 0 10px rgba(57, 255, 20, 0.5);">GraphIQ</h1>
-        <p style="font-size: 1.2rem; color: #888888;">Instant Data Storytelling Agent</p>
+        <h1 style="font-size: 4rem; font-weight: 800; color: #39FF14; margin-bottom:0; text-shadow: 0 0 15px rgba(57, 255, 20, 0.6);">GraphIQ</h1>
+        <p style="font-size: 1.4rem; color: #888888;">Next-Gen Data Storytelling Agent</p>
     </div>
 
     <a href="https://www.linkedin.com/in/jedisuperman" target="_blank" class="sid-link">
@@ -70,21 +71,21 @@ st.markdown("""
             <span class="rotating-atom">⚛️</span>
             <div>
                 <div style="font-size: 9px; text-transform: uppercase; color: #39FF14; letter-spacing: 1.2px;">Created by</div>
-                <div style="font-weight: 700; font-size: 14px; color: white;">Sidd Bhattacharjee</div>
-                <div style="font-size: 10px; color: #888888;">your next gen AI tech marketer</div>
+                <div style="font-weight: 700; font-size: 15px; color: white;">Sidd Bhattacharjee</div>
+                <div style="font-size: 11px; color: #94a3b8;">your next gen AI tech marketer</div>
             </div>
         </div>
     </a>
     """, unsafe_allow_html=True)
 
-# --- 2. THE RESET ENGINE ---
+# --- 2. ENGINE CONTROLS ---
 def reset_app():
     for key in st.session_state.keys():
         del st.session_state[key]
     st.rerun()
 
 # --- 3. MAIN WORKFLOW ---
-file = st.file_uploader("📂 Upload your dataset to begin", type=["csv", "xlsx"])
+file = st.file_uploader("📂 Upload Dataset (CSV/XLSX)", type=["csv", "xlsx"])
 
 if not file:
     cols = st.columns(3)
@@ -94,23 +95,33 @@ if not file:
 else:
     try:
         df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
-        st.markdown("### 🔍 Data Preview")
-        st.dataframe(df.head(5), use_container_width=True)
+        with st.expander("🔍 View Raw Data Preview"):
+            st.dataframe(df.head(5), use_container_width=True)
 
-        query = st.text_input("💬 What insight should GraphIQ reveal?", placeholder="e.g., Show me a 3D scatter plot of the revenue")
+        query = st.text_input("💬 What insight should GraphIQ reveal?", placeholder="e.g., Show me a 3D scatter plot of marketing ROI")
 
         col_run, col_reset = st.columns([4, 1])
         
         with col_run:
             if st.button("🚀 Synthesize Visualization", use_container_width=True):
-                with st.status("Agent is synthesizing...", expanded=True):
+                with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
                     try:
                         client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-                        sys_prompt = f"Write ONLY python code using plotly.express. Data is in 'data.csv'. Columns: {df.columns.tolist()}. User wants: {query}. Force template='plotly_dark' with color_discrete_sequence=['#39FF14', '#00F2FE']. The final line must be 'fig.show()'."
+                        
+                        # UPDATED MODEL ID FOR 2026 STANDARDS
+                        RECOMMENDED_MODEL = "llama-3.3-70b-versatile"
+                        
+                        sys_prompt = f"""
+                        Write ONLY python code using plotly.express. Data: 'data.csv'. 
+                        Columns: {df.columns.tolist()}. User wants: {query}.
+                        Force dark theme: template='plotly_dark'.
+                        Use a high-contrast Neon Green (#39FF14) and Electric Blue palette.
+                        Final line must be 'fig.show()'.
+                        """
                         
                         response = client.chat.completions.create(
                             messages=[{"role": "user", "content": sys_prompt}],
-                            model="llama3-70b-8192",
+                            model=RECOMMENDED_MODEL,
                             temperature=0.1
                         )
                         code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
@@ -122,9 +133,9 @@ else:
                                 st.plotly_chart(result.results[0].plotly, use_container_width=True)
                                 st.success("Vision synthesized successfully!")
                             else:
-                                st.error("Engine failure: Code executed but no chart was produced.")
+                                st.error("Engine failure: Logic executed but no chart was produced.")
                     except Exception as e:
-                        st.error(f"⚠️ Error Detected: {str(e)}")
+                        st.error(f"⚠️ Neural Link Error: {str(e)}")
         
         with col_reset:
             if st.button("🗑 Reset", use_container_width=True):
@@ -133,12 +144,13 @@ else:
     except Exception as e:
         st.error(f"File loading error: {e}")
 
-# Sidebar reset (Now visible with Neon Green text)
+# Sidebar Visibility Fix
 with st.sidebar:
     st.markdown("### 🧬 Memory Bank")
-    st.write("Your sessions are volatile. Link your identity to save.")
+    st.write("Persist your visions across sessions.")
     if st.button("Connect Neural Link"):
-        st.info("Auth integration coming soon.")
+        st.info("Cloud authentication coming soon.")
     st.markdown("---")
+    st.markdown("### 🛠 Tools")
     if st.button("🗑 Reset Engine"):
         reset_app()
