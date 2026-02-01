@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from groq import Groq
-from e2b_code_interpreter import CodeInterpreter
+from e2b_code_interpreter import Sandbox
 import os
 
 # --- UI CONFIG ---
@@ -47,7 +47,7 @@ if uploaded_file:
             code = chat_completion.choices[0].message.content.replace("```python", "").replace("```", "")
 
             # 3. Setup the Hands (E2B)
-            with CodeInterpreter(api_key=E2B_API_KEY) as sandbox:
+            with Sandbox(api_key=E2B_API_KEY) as sandbox:
                 sandbox.upload_file(uploaded_file) # Uploading data to the sandbox
                 execution = sandbox.notebook.exec_cell(code)
                 
