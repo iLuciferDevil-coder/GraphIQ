@@ -44,7 +44,7 @@ st.markdown("""
         <div>
             <div style="font-size: 10px; text-transform: uppercase; color: #3b82f6;">Created by</div>
             <div style="font-weight: bold; font-size: 14px;">Sidd Bhattacharjee</div>
-            <div style="font-size: 11px; color: #94a3b8;">"your next gen AI tech marketer"</div>
+            <div style="font-size: 11px; color: #94a3b8;">"your next-gen AI tech marketer"</div>
         </div>
     </div>
     """, unsafe_allow_html=True)
