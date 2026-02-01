@@ -92,34 +92,35 @@ else:
                     st.warning("Please enter a question first.")
                 else:
                     with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
-                        try:
-                            # SET KEYS GLOBALLY - This handles SandboxBase missing arguments
-                            os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
-                            client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-                            
-                            # Use current production model ID
-                            MODEL_ID = "llama-3.3-70b-versatile"
-                            
-                            sys_prompt = f"Write ONLY python code using plotly.express. Data is in 'data.csv'. Columns: {df.columns.tolist()}. User wants: {query}. Force template='plotly_dark' with color_discrete_sequence=['#39FF14', '#00F2FE']. Final line must be 'fig.show()'."
-                            
-                            response = client.chat.completions.create(
-                                messages=[{"role": "user", "content": sys_prompt}],
-                                model=MODEL_ID,
-                                temperature=0.1
-                            )
-                            code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
-                            
-                            # THE FIX: No api_key inside the parentheses allows global environment mapping
-                            with Sandbox() as sandbox:
-                                sandbox.upload_file(file)
-                                result = sandbox.notebook.exec_cell(code)
-                                if result.results:
-                                    st.plotly_chart(result.results[0].plotly, width='stretch')
-                                    st.success("Vision synthesized successfully!")
-                                else:
-                                    st.error("Engine failure: No chart produced.")
-                        except Exception as e:
-                            st.error(f"⚠️ Neural Link Error: {str(e)}")
+    try:
+        # ✅ SET API KEYS FIRST (E2B auto-detects from env)
+        os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
+        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+        
+        MODEL_ID = "llama-3.3-70b-versatile"
+        sys_prompt = f"Write ONLY python code using plotly.express. Data is in 'data.csv'. Columns: {df.columns.tolist()}. User wants: {query}. Force template='plotly_dark' with color_discrete_sequence=['#39FF14', '#00F2FE']. Final line must be 'fig.show()'."
+        
+        response = client.chat.completions.create(
+            messages=[{"role": "user", "content": sys_prompt}],
+            model=MODEL_ID,
+            temperature=0.1
+        )
+        code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
+        
+        # ✅ E2B v2.x CORRECT USAGE (no arguments needed)
+        sandbox = Sandbox()  # Uses E2B_API_KEY automatically
+        sandbox.upload_file(file)
+        result = sandbox.notebook.exec_cell(code)
+        sandbox.close()  # Explicit cleanup
+        
+        if result.results and result.results[0].plotly:
+            st.plotly_chart(result.results[0].plotly, width='stretch')
+            st.success("✅ Vision synthesized successfully!")
+        else:
+            st.error("Engine failure: No chart produced.")
+            
+    except Exception as e:
+        st.error(f"⚠️ Neural Link Error: {str(e)}")
         
         with col_reset:
             if st.button("🗑 Reset", width='stretch'):
