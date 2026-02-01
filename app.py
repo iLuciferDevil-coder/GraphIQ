@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from groq import Groq
-from e2b_code_interpreter import CodeInterpreter
+from e2b_code_interpreter import Sandbox
 import os
 
 # --- 1. CYBERPUNK UI & BRANDING ---
@@ -75,7 +75,7 @@ st.markdown("""
             <span class="rotating-atom">⚛️</span>
             <div>
                 <div style="font-size: 9px; text-transform: uppercase; color: #39FF14; letter-spacing: 1.2px;">Created by</div>
-                <div style="font-weight: 700; font-size: 14px; color: white;">Sidd Bhattacharjee</div>
+                <div style="font-weight: 700; font-size: 15px; color: white;">Sidd Bhattacharjee</div>
                 <div style="font-size: 10px; color: #94a3b8;">your next gen AI tech marketer</div>
             </div>
         </div>
@@ -101,22 +101,22 @@ else:
         # Load Data
         df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
         with st.expander("🔍 View Raw Data Preview"):
-            st.dataframe(df.head(5), use_container_width=True)
+            st.dataframe(df.head(5), width='stretch')
 
         query = st.text_input("💬 What insight should GraphIQ reveal?", placeholder="e.g., Show a 3D scatter plot of Revenue vs Marketing Spend")
 
         col_run, col_reset = st.columns([4, 1])
         
         with col_run:
-            if st.button("🚀 Synthesize Visualization", use_container_width=True):
+            if st.button("🚀 Synthesize Visualization", width='stretch'):
                 if not query:
                     st.warning("Please enter a question first.")
                 else:
                     with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
                         try:
                             # Set API Keys globally for the environment
-                            os.environ["E2B_API_KEY"] = os.getenv("E2B_API_KEY")
-                            client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+                            os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
+                            client = Groq(api_key=st.secrets["GROQ_API_KEY"])
                             
                             MODEL_ID = "llama-3.3-70b-versatile"
                             
@@ -137,13 +137,13 @@ else:
                             raw_code = response.choices[0].message.content
                             code = raw_code.replace("```python", "").replace("```", "").strip()
                             
-                            # Using CodeInterpreter specifically for 2026 SDK standards
-                            with CodeInterpreter() as sandbox:
+                            # Using Sandbox class to match installed library
+                            with Sandbox() as sandbox:
                                 sandbox.upload_file(file)
                                 result = sandbox.notebook.exec_cell(code)
                                 
                                 if result.results:
-                                    st.plotly_chart(result.results[0].plotly, use_container_width=True)
+                                    st.plotly_chart(result.results[0].plotly, width='stretch')
                                     st.success("Vision synthesized successfully!")
                                 else:
                                     st.error("Engine failure: Logic executed but no chart was produced.")
@@ -151,7 +151,7 @@ else:
                             st.error(f"⚠️ Neural Link Error: {str(e)}")
         
         with col_reset:
-            if st.button("🗑 Reset", use_container_width=True):
+            if st.button("🗑 Reset", width='stretch'):
                 reset_app()
 
     except Exception as e:
