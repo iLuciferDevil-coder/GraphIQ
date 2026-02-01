@@ -108,16 +108,14 @@ else:
         code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
         
         # ✅ E2B v2.x CORRECT USAGE (no arguments needed)
-        sandbox = Sandbox()  # Uses E2B_API_KEY automatically
-        sandbox.upload_file(file)
-        result = sandbox.notebook.exec_cell(code)
-        sandbox.close()  # Explicit cleanup
-        
-        if result.results and result.results[0].plotly:
-            st.plotly_chart(result.results[0].plotly, width='stretch')
-            st.success("✅ Vision synthesized successfully!")
-        else:
-            st.error("Engine failure: No chart produced.")
+        with Sandbox() as sandbox:  # No arguments needed - uses E2B_API_KEY from env
+    sandbox.upload_file(file)
+    result = sandbox.notebook.exec_cell(code)
+    if result.results:
+        st.plotly_chart(result.results[0].plotly, width='stretch')
+        st.success("Vision synthesized successfully!")
+    else:
+        st.error("Engine failure: No chart produced.")
             
     except Exception as e:
         st.error(f"⚠️ Neural Link Error: {str(e)}")
