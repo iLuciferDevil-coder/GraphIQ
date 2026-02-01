@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from groq import Groq
-from e2b_code_interpreter import Sandbox
+from e2b_code_interpreter import CodeInterpreter
 import os
 
 # --- 1. PREMIUM CYBERPUNK UI ---
@@ -93,7 +93,7 @@ else:
                 else:
                     with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
                         try:
-                            # Set API Keys globally for the environment
+                            # Set API Keys globally
                             os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
                             client = Groq(api_key=st.secrets["GROQ_API_KEY"])
                             
@@ -108,12 +108,14 @@ else:
                             )
                             code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
                             
-                            # THE FIX: Use Sandbox.create() to bypass the SandboxBase.init() bug
-                            with Sandbox.create() as sandbox:
-                                # ✅ FIX: Use sandbox.files.write for version 2.x filesystem API
+                            # THE KEY FIX: Using CodeInterpreter.create() handles the notebook attribute automatically
+                            with CodeInterpreter.create() as sandbox:
+                                # Use the correct filesystem write method
                                 sandbox.files.write("data.csv", file.getvalue())
                                 
+                                # Execute using the notebook attribute correctly
                                 result = sandbox.notebook.exec_cell(code)
+                                
                                 if result.results:
                                     st.plotly_chart(result.results[0].plotly, width='stretch')
                                     st.success("Vision synthesized successfully!")
