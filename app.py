@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from groq import Groq
-from e2b_code_interpreter import Sandbox
+from e2b_code_interpreter import CodeInterpreter
 import os
 
 # --- 1. PREMIUM UI & BRANDING ---
@@ -93,13 +93,12 @@ else:
                 else:
                     with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
                         try:
-                            # ✅ SET API KEYS GLOBALLY BEFORE INITIALIZATION
+                            # 1. Setup API Keys
                             os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
                             client = Groq(api_key=st.secrets["GROQ_API_KEY"])
                             
-                            # Use current production model ID 
+                            # 2. Ask Llama 3.3 for the Plotly code
                             MODEL_ID = "llama-3.3-70b-versatile"
-                            
                             sys_prompt = f"Write ONLY python code using plotly.express. Data is in 'data.csv'. Columns: {df.columns.tolist()}. User wants: {query}. Force template='plotly_dark' with color_discrete_sequence=['#39FF14', '#00F2FE']. Final line must be 'fig.show()'."
                             
                             response = client.chat.completions.create(
@@ -109,15 +108,15 @@ else:
                             )
                             code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
                             
-                            # ✅ INITIALIZE SANDBOX WITHOUT ARGUMENTS
-                            with Sandbox() as sandbox:
+                            # 3. Use CodeInterpreter (the specialized E2B agent for data)
+                            with CodeInterpreter() as sandbox:
                                 sandbox.upload_file(file)
                                 result = sandbox.notebook.exec_cell(code)
                                 if result.results:
                                     st.plotly_chart(result.results[0].plotly, width='stretch')
                                     st.success("Vision synthesized successfully!")
                                 else:
-                                    st.error("Engine failure: No chart produced.")
+                                    st.error("Engine failure: Logic executed but no chart was produced.")
                                     
                         except Exception as e:
                             st.error(f"⚠️ Neural Link Error: {str(e)}")
