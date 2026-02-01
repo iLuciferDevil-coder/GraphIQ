@@ -4,27 +4,38 @@ from groq import Groq
 from e2b_code_interpreter import Sandbox
 import os
 
-# --- 1. PREMIUM UI & BRANDING ---
+# --- 1. CYBERPUNK UI & BRANDING ---
 st.set_page_config(page_title="GraphIQ | Sidd Bhattacharjee", page_icon="⚛️", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background: #050505; color: #ffffff !important; }
-    [data-testid="stSidebar"] { background-color: #000000 !important; border-right: 1px solid #39FF14 !important; }
-    [data-testid="stSidebar"] * { color: #39FF14 !important; }
-    label, .stMarkdown, .stSubheader, p, span, .stMetric { color: #ffffff !important; font-weight: 500 !important; }
-    
-    /* File Uploader Contrast */
-    .stFileUploader section { background-color: #111111 !important; border: 1px dashed #39FF14 !important; color: #ffffff !important; }
-    
-    .hero-box { 
-        padding: 50px 20px; text-align: center; 
-        background: radial-gradient(circle at center, rgba(57, 255, 20, 0.1) 0%, rgba(5, 5, 5, 0) 75%); 
-        margin-bottom: 20px; 
+    [data-testid="stSidebar"] {
+        background-color: #000000 !important;
+        border-right: 1px solid #39FF14 !important;
     }
-
+    [data-testid="stSidebar"] * { color: #39FF14 !important; }
+    label, .stMarkdown, .stSubheader, p, span, .stMetric { 
+        color: #ffffff !important; 
+        font-weight: 500 !important; 
+    }
+    button[kind="secondary"] {
+        color: #39FF14 !important;
+        border-color: #39FF14 !important;
+        background-color: rgba(57, 255, 20, 0.05) !important;
+    }
+    .stFileUploader section {
+        background-color: #111111 !important;
+        border: 1px dashed #39FF14 !important;
+        color: #ffffff !important;
+    }
+    .hero-box {
+        padding: 50px 20px;
+        text-align: center;
+        background: radial-gradient(circle at center, rgba(57, 255, 20, 0.1) 0%, rgba(5, 5, 5, 0) 75%);
+        margin-bottom: 20px;
+    }
     .sid-link { position: fixed; bottom: 25px; right: 25px; text-decoration: none !important; z-index: 1000; transition: transform 0.3s ease; }
-    .sid-link:hover { transform: scale(1.05); }
     .sid-pill {
         background: rgba(0, 0, 0, 0.95); padding: 12px 24px;
         border-radius: 50px; border: 1px solid #39FF14;
@@ -37,7 +48,7 @@ st.markdown("""
 
     <div class="hero-box">
         <h1 style="font-size: 4rem; font-weight: 800; color: #39FF14; margin-bottom:0; text-shadow: 0 0 15px rgba(57, 255, 20, 0.6);">GraphIQ</h1>
-        <p style="font-size: 1.4rem; color: #888888;">Instant Data Storytelling Agent</p>
+        <p style="font-size: 1.4rem; color: #888888;">Next-Gen Data Storytelling Agent</p>
     </div>
 
     <a href="https://www.linkedin.com/in/jedisuperman" target="_blank" class="sid-link">
@@ -53,7 +64,8 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 def reset_app():
-    for key in list(st.session_state.keys()): del st.session_state[key]
+    for key in list(st.session_state.keys()):
+        del st.session_state[key]
     st.rerun()
 
 # --- 2. MAIN WORKFLOW ---
@@ -67,43 +79,55 @@ if not file:
 else:
     try:
         df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
-        with st.expander("🔍 View Raw Data Preview"): st.dataframe(df.head(5), width='stretch')
+        with st.expander("🔍 View Raw Data Preview"):
+            st.dataframe(df.head(5), width='stretch')
+
         query = st.text_input("💬 What insight should GraphIQ reveal?", placeholder="e.g., Show a 3D scatter plot of Revenue")
-        
+
         col_run, col_reset = st.columns([4, 1])
+        
         with col_run:
             if st.button("🚀 Synthesize Visualization", width='stretch'):
-                with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
-                    try:
-                        os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
-                        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-                        
-                        sys_prompt = f"Write ONLY python code using plotly.express. Data: 'data.csv'. Columns: {df.columns.tolist()}. User wants: {query}. Force template='plotly_dark' with color_discrete_sequence=['#39FF14', '#00F2FE']. Final line must be 'fig.show()'."
-                        
-                        response = client.chat.completions.create(
-                            messages=[{"role": "user", "content": sys_prompt}],
-                            model="llama-3.3-70b-versatile",
-                            temperature=0.1
-                        )
-                        code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
-                        
-                        # THE KEY FIX: Using the base Sandbox class with explicit API Key retrieval
-                        with Sandbox(api_key=st.secrets["E2B_API_KEY"]) as sandbox:
-                            sandbox.upload_file(file)
-                            result = sandbox.notebook.exec_cell(code)
-                            if result.results:
-                                st.plotly_chart(result.results[0].plotly, width='stretch')
-                                st.success("Vision synthesized successfully!")
-                            else:
-                                st.error("Engine failure: No chart produced.")
-                    except Exception as e:
-                        st.error(f"⚠️ Neural Link Error: {str(e)}")
+                if not query:
+                    st.warning("Please enter a question first.")
+                else:
+                    with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
+                        try:
+                            # SET KEY GLOBALLY - This fixes the init() argument error
+                            os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
+                            client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+                            
+                            sys_prompt = f"Write ONLY python code using plotly.express. Data is in 'data.csv'. Columns: {df.columns.tolist()}. User wants: {query}. Force template='plotly_dark' with color_discrete_sequence=['#39FF14', '#00F2FE']. Final line must be 'fig.show()'."
+                            
+                            response = client.chat.completions.create(
+                                messages=[{"role": "user", "content": sys_prompt}],
+                                model="llama-3.3-70b-versatile",
+                                temperature=0.1
+                            )
+                            code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
+                            
+                            # THE FIX: No api_key inside the parentheses
+                            with Sandbox() as sandbox:
+                                sandbox.upload_file(file)
+                                result = sandbox.notebook.exec_cell(code)
+                                if result.results:
+                                    st.plotly_chart(result.results[0].plotly, width='stretch')
+                                    st.success("Vision synthesized successfully!")
+                                else:
+                                    st.error("Engine failure: No chart produced.")
+                        except Exception as e:
+                            st.error(f"⚠️ Neural Link Error: {str(e)}")
+        
         with col_reset:
-            if st.button("🗑 Reset", width='stretch'): reset_app()
-    except Exception as e: st.error(f"File loading error: {e}")
+            if st.button("🗑 Reset", width='stretch'):
+                reset_app()
+    except Exception as e:
+        st.error(f"File loading error: {e}")
 
 with st.sidebar:
     st.markdown("### 🧬 Memory Bank")
-    if st.button("Connect Neural Link"): st.info("Cloud sync coming soon.")
+    if st.button("Connect Neural Link"):
+        st.info("Cloud sync coming soon.")
     st.markdown("---")
-    if st.button("🗑 Reset Engine"): reset_app()
+    if st.button("🗑 Reset Engine"):
+        reset_app()
