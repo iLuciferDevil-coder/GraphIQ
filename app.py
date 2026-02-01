@@ -93,9 +93,12 @@ file = st.file_uploader("📂 Upload Dataset (CSV/XLSX)", type=["csv", "xlsx"])
 
 if not file:
     cols = st.columns(3)
-    with cols[0]: st.markdown("#### 🟢 Step 1: Ingest\nUpload messy spreadsheets effortlessly.")
-    with cols[1]: st.markdown("#### 🧠 Step 2: Ask\n'Show me sales trends over time'.")
-    with cols[2]: st.markdown("#### 🎨 Step 3: Visualize\nAI builds interactive neon charts.")
+    with cols[0]: st.markdown("#### 🟢 Step 1: Ingest
+Upload messy spreadsheets effortlessly.")
+    with cols[1]: st.markdown("#### 🧠 Step 2: Ask
+'Show me sales trends over time'.")
+    with cols[2]: st.markdown("#### 🎨 Step 3: Visualize
+AI builds interactive neon charts.")
 else:
     try:
         # Load Data
@@ -129,33 +132,4 @@ else:
                             )
                             
                             raw_code = response.choices[0].message.content
-                            code = raw_code.replace("```python", "").replace("```", "").strip()
-                            
-                            # THE KEY FIX: Initialize Sandbox without direct arguments to avoid keyword clash
-                            with Sandbox() as sandbox:
-                                sandbox.upload_file(file)
-                                result = sandbox.notebook.exec_cell(code)
-                                
-                                if result.results:
-                                    st.plotly_chart(result.results[0].plotly, width='stretch')
-                                    st.success("Vision synthesized successfully!")
-                                else:
-                                    st.error("Engine failure: Logic executed but no chart was produced.")
-                        except Exception as e:
-                            st.error(f"⚠️ Neural Link Error: {str(e)}")
-        
-        with col_reset:
-            if st.button("🗑 Reset", width='stretch'):
-                reset_app()
-
-    except Exception as e:
-        st.error(f"File loading error: {e}")
-
-# Sidebar Visibility
-with st.sidebar:
-    st.markdown("### 🧬 Memory Bank")
-    if st.button("Connect Neural Link"):
-        st.info("Cloud sync coming soon.")
-    st.markdown("---")
-    if st.button("🗑 Reset Engine"):
-        reset_app()
+                            code = raw_code.replace("
