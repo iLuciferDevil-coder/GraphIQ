@@ -93,12 +93,9 @@ file = st.file_uploader("📂 Upload Dataset (CSV/XLSX)", type=["csv", "xlsx"])
 
 if not file:
     cols = st.columns(3)
-    with cols[0]: st.markdown("#### 🟢 Step 1: Ingest
-Upload messy spreadsheets effortlessly.")
-    with cols[1]: st.markdown("#### 🧠 Step 2: Ask
-'Show me sales trends over time'.")
-    with cols[2]: st.markdown("#### 🎨 Step 3: Visualize
-AI builds interactive neon charts.")
+    with cols[0]: st.markdown("#### 🟢 Step 1: Ingest\nUpload messy spreadsheets effortlessly.")
+    with cols[1]: st.markdown("#### 🧠 Step 2: Ask\n'Show me sales trends over time'.")
+    with cols[2]: st.markdown("#### 🎨 Step 3: Visualize\nAI builds interactive neon charts.")
 else:
     try:
         # Load Data
@@ -117,7 +114,7 @@ else:
                 else:
                     with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
                         try:
-                            # SET KEYS GLOBALLY
+                            # SET KEYS GLOBALLY - This fixes the SandboxBase missing arguments error
                             os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
                             client = Groq(api_key=st.secrets["GROQ_API_KEY"])
                             
@@ -132,18 +129,10 @@ else:
                             )
                             
                             raw_code = response.choices[0].message.content
-                            code = raw_code.replace("", "").strip()
+                            code = raw_code.replace("```python", "").replace("```", "").strip()
                             
-                            # Initialize Sandbox with required arguments
-                            sandbox = Sandbox(
-                                sandbox_id=os.getenv("E2B_SANDBOX_ID"),
-                                envd_version=os.getenv("E2B_ENVD_VERSION"),
-                                envd_access_token=os.getenv("E2B_ENVD_ACCESS_TOKEN"),
-                                sandbox_domain=os.getenv("E2B_SANDBOX_DOMAIN"),
-                                connection_config={"api_key": os.getenv("E2B_API_KEY")}
-                            )
-                            
-                            with sandbox:
+                            # THE KEY FIX: Initialize Sandbox without direct arguments to avoid keyword clash
+                            with Sandbox() as sandbox:
                                 sandbox.upload_file(file)
                                 result = sandbox.notebook.exec_cell(code)
                                 
