@@ -4,55 +4,92 @@ from groq import Groq
 from e2b_code_interpreter import Sandbox
 import os
 
-# --- UI CONFIG ---
-st.set_page_config(page_title="GraphIQ", page_icon="📊", layout="wide")
+# --- PREMIUM BRANDING & UI CONFIG ---
+st.set_page_config(page_title="GraphIQ | Sidd Bhattacharjee", page_icon="🚀", layout="wide")
+
+# Futuristic CSS with Sid's Branding styles
 st.markdown("""
     <style>
-    .main { background: #0e1117; color: white; }
-    .stTextInput>div>div>input { background-color: #1a1c23; color: #00f2fe; border: 1px solid #4facfe; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;700&display=swap');
+    
+    html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+    .stApp { background: #0b0e14; color: #e2e8f0; }
+    
+    /* Sid's Branding Footer */
+    .sid-footer {
+        position: fixed;
+        bottom: 10px;
+        right: 20px;
+        font-size: 14px;
+        color: #94a3b8;
+        background: rgba(15, 23, 42, 0.8);
+        padding: 10px 20px;
+        border-radius: 30px;
+        border: 1px solid #334155;
+        backdrop-filter: blur(5px);
+        z-index: 1000;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    /* Moving Icon Animation */
+    .moving-icon {
+        animation: rotate 3s linear infinite;
+        display: inline-block;
+        font-size: 20px;
+    }
+    @keyframes rotate { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    
+    /* Premium Dashboard Cards */
+    .data-card {
+        background: #1e293b;
+        padding: 20px;
+        border-radius: 15px;
+        border-left: 5px solid #3b82f6;
+        margin-bottom: 20px;
+    }
     </style>
+    
+    <div class="sid-footer">
+        Created by <strong>Sidd Bhattacharjee</strong> 
+        <span style="color:#3b82f6;">"your next gen AI tech marketer"</span> 
+        <span class="moving-icon">⚛️</span>
+    </div>
     """, unsafe_allow_html=True)
 
-st.title("📊 GraphIQ")
-
-# Load Secrets
-GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-E2B_API_KEY = os.getenv("E2B_API_KEY")
-
-uploaded_file = st.file_uploader("Upload Data", type=["csv", "xlsx"])
-
-if uploaded_file:
-    df = pd.read_csv(uploaded_file)
-    st.dataframe(df.head(5))
+# --- SIDEBAR: PRODUCT CONFIGURATION ---
+with st.sidebar:
+    st.title("⚙️ GraphIQ Pro")
+    st.markdown("---")
     
-    query = st.text_input("Ask GraphIQ to visualize something:", "Show me a distribution of the data")
+    with st.expander("🛠 Engine Settings", expanded=True):
+        model_choice = st.selectbox("LLM Brain", ["Llama3-70b-8192 (Genius)", "Llama3-8b-8192 (Fast)"])
+        temp = st.slider("Creativity Level", 0.0, 1.0, 0.2)
+    
+    with st.expander("🎨 Visual Identity"):
+        viz_theme = st.selectbox("Color Palette", ["Neon Night", "Deep Space", "Arctic Frost", "Solaris"])
+        show_code = st.checkbox("Show AI Logic (Code)", value=False)
 
-    if st.button("Generate Vision"):
-        with st.status("Agentic Process Running...", expanded=True):
-            # 1. Prepare Data Context
-            columns = df.columns.tolist()
-            
-            # 2. Setup the Brain (Groq)
-            client = Groq(api_key=GROQ_API_KEY)
-            prompt = f"""
-            You are a Senior Data Scientist. Write Python code using 'plotly' to visualize: {query}.
-            The data is in a file named 'data.csv'. The columns are: {columns}.
-            Only output the code. No explanation.
-            """
-            
-            chat_completion = client.chat.completions.create(
-                messages=[{"role": "user", "content": prompt}],
-                model="llama3-8b-8192",
-            )
-            code = chat_completion.choices[0].message.content.replace("```python", "").replace("```", "")
+    st.markdown("---")
+    if st.button("🗑 Clear Session"):
+        st.rerun()
 
-            # 3. Setup the Hands (E2B)
-            with Sandbox(api_key=E2B_API_KEY) as sandbox:
-                sandbox.upload_file(uploaded_file) # Uploading data to the sandbox
-                execution = sandbox.notebook.exec_cell(code)
-                
-                if execution.results:
-                    # Display the first result (usually the chart)
-                    st.plotly_chart(execution.results[0].plotly)
-                else:
-                    st.error("Visualization failed. Refining logic...")
+# --- MAIN WORKSPACE ---
+col_main, col_stats = st.columns([3, 1])
+
+with col_main:
+    st.markdown("# ⚛️ GraphIQ Intelligence")
+    st.caption("Advanced Data Visualization for the Next Gen Enterprise")
+    
+    uploaded_file = st.file_uploader("", type=["csv", "xlsx"])
+
+    if uploaded_file:
+        df = pd.read_csv(uploaded_file) if uploaded_file.name.endswith('.csv') else pd.read_excel(uploaded_file)
+        
+        # UI: Smart Data Preview
+        st.markdown('<div class="data-card"><h4>Live Data Stream</h4></div>', unsafe_allow_html=True)
+        st.dataframe(df.head(5), use_container_width=True)
+        
+        # User Interaction
+        query = st.text_input("Describe the visualization or business question:", placeholder="e.g., 'Compare quarterly growth
