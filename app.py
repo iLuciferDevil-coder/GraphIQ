@@ -92,37 +92,39 @@ else:
                     st.warning("Please enter a question first.")
                 else:
                     with st.status("Engine: Llama 3.3 Versatile Processing...", expanded=True):
-    try:
-        # ✅ SET API KEYS FIRST (E2B auto-detects from env)
-        os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
-        client = Groq(api_key=st.secrets["GROQ_API_KEY"])
-        
-        MODEL_ID = "llama-3.3-70b-versatile"
-        sys_prompt = f"Write ONLY python code using plotly.express. Data is in 'data.csv'. Columns: {df.columns.tolist()}. User wants: {query}. Force template='plotly_dark' with color_discrete_sequence=['#39FF14', '#00F2FE']. Final line must be 'fig.show()'."
-        
-        response = client.chat.completions.create(
-            messages=[{"role": "user", "content": sys_prompt}],
-            model=MODEL_ID,
-            temperature=0.1
-        )
-        code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
-        
-        # ✅ E2B v2.x CORRECT USAGE (no arguments needed)
-        with Sandbox() as sandbox:  # No arguments needed - uses E2B_API_KEY from env
-    sandbox.upload_file(file)
-    result = sandbox.notebook.exec_cell(code)
-    if result.results:
-        st.plotly_chart(result.results[0].plotly, width='stretch')
-        st.success("Vision synthesized successfully!")
-    else:
-        st.error("Engine failure: No chart produced.")
-            
-    except Exception as e:
-        st.error(f"⚠️ Neural Link Error: {str(e)}")
+                        try:
+                            # 1. Setup Environment
+                            os.environ["E2B_API_KEY"] = st.secrets["E2B_API_KEY"]
+                            client = Groq(api_key=st.secrets["GROQ_API_KEY"])
+                            
+                            # 2. Generate Code
+                            MODEL_ID = "llama-3.3-70b-versatile"
+                            sys_prompt = f"Write ONLY python code using plotly.express. Data is in 'data.csv'. Columns: {df.columns.tolist()}. User wants: {query}. Force template='plotly_dark' with color_discrete_sequence=['#39FF14', '#00F2FE']. Final line must be 'fig.show()'."
+                            
+                            response = client.chat.completions.create(
+                                messages=[{"role": "user", "content": sys_prompt}],
+                                model=MODEL_ID,
+                                temperature=0.1
+                            )
+                            code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
+                            
+                            # 3. Execute in Sandbox
+                            with Sandbox() as sandbox:
+                                sandbox.upload_file(file)
+                                result = sandbox.notebook.exec_cell(code)
+                                if result.results:
+                                    st.plotly_chart(result.results[0].plotly, width='stretch')
+                                    st.success("Vision synthesized successfully!")
+                                else:
+                                    st.error("Engine failure: No chart produced.")
+                                    
+                        except Exception as e:
+                            st.error(f"⚠️ Neural Link Error: {str(e)}")
         
         with col_reset:
             if st.button("🗑 Reset", width='stretch'):
                 reset_app()
+
     except Exception as e:
         st.error(f"File loading error: {e}")
 
