@@ -57,7 +57,7 @@ st.markdown("""
             <div>
                 <div style="font-size: 9px; text-transform: uppercase; color: #39FF14; letter-spacing: 1.2px;">Created by</div>
                 <div style="font-weight: 700; font-size: 14px; color: white;">Sidd Bhattacharjee</div>
-                <div style="font-size: 10px; color: #94a3b8;">your next gen AI tech marketer</div>
+                <div style="font-size: 10px; color: #888888;">your next gen AI tech marketer</div>
             </div>
         </div>
     </a>
@@ -74,7 +74,9 @@ file = st.file_uploader("📂 Upload Dataset (CSV/XLSX)", type=["csv", "xlsx"])
 if file:
     try:
         df = pd.read_csv(file) if file.name.endswith('.csv') else pd.read_excel(file)
-        st.dataframe(df.head(5), width='stretch')
+        with st.expander("🔍 View Raw Data Preview"):
+            st.dataframe(df.head(5), width='stretch')
+
         query = st.text_input("💬 What insight should GraphIQ reveal?", placeholder="e.g., Show revenue trends")
 
         if st.button("🚀 Synthesize Visualization", width='stretch'):
@@ -95,14 +97,12 @@ if file:
                         )
                         code = response.choices[0].message.content.replace("```python", "").replace("```", "").strip()
                         
-                        # THE FINAL HYBRID FIX:
-                        # 1. Use Sandbox (Import works in v2.4.1) [cite: 1]
-                        # 2. Use .create() (Fixes the missing 5 positional arguments bug) 
+                        # THE CRITICAL FIX: Use Sandbox.create() to bypass the positional argument bug
                         with Sandbox.create() as sandbox:
-                            # Use updated filesystem API
+                            # Use updated filesystem API for version 2.x
                             sandbox.files.write("data.csv", file.getvalue())
                             
-                            # Execute in notebook cell
+                            # Execute code
                             result = sandbox.notebook.exec_cell(code)
                             
                             if result.results:
@@ -112,3 +112,12 @@ if file:
                         st.error(f"⚠️ Neural Link Error: {str(e)}")
     except Exception as e:
         st.error(f"File loading error: {e}")
+
+# Sidebar Visibility
+with st.sidebar:
+    st.markdown("### 🧬 Memory Bank")
+    if st.button("Connect Neural Link"):
+        st.info("Cloud sync coming soon.")
+    st.markdown("---")
+    if st.button("🗑 Reset Engine"):
+        reset_app()
